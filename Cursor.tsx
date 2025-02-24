@@ -3,13 +3,26 @@ import gsap from 'gsap';
 import styles from './Cursor.module.css'
 
 const Cursor: React.FC = () => {
-  // @ts-ignore
-  const [widthMatches, setWidthMatches] = useState<boolean>(window?.matchMedia('(min-width: 768px)').matches);
+  const [widthMatches, setWidthMatches] = useState<boolean | undefined>(undefined);
   const cursorRef = useRef<HTMLDivElement>(null);
   const bigBallRef = useRef<HTMLDivElement>(null);
   const smallBallRef = useRef<HTMLDivElement>(null);
-  // @ts-ignore
-  const bodyRef = useRef<HTMLBodyElement>(document.body);
+  const bodyRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== undefined) {
+      const mediaQuery = window.matchMedia('(min-width: 768px)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        setWidthMatches(e.matches);
+      };
+      setWidthMatches(mediaQuery.matches); 
+      mediaQuery.addEventListener('change', handleChange);
+      bodyRef.current = document.body;
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     const handleMediaQueryChange = (e: MediaQueryListEvent) => {
@@ -57,10 +70,11 @@ const Cursor: React.FC = () => {
     const handleMouseHover = () => {
       if (bigBallRef.current) {
         gsap.to(bigBallRef.current, {
-          scale: 4,
+          scale: 2,
           duration: 0.3,
         });
       }
+    
     };
 
     const handleMouseHoverOut = () => {
@@ -70,13 +84,15 @@ const Cursor: React.FC = () => {
           duration: 0.3,
         });
       }
+    
     };
 
     if (bodyRef.current) {
       bodyRef.current.addEventListener('mousemove', handleMouseMove);
     }
 
-    const hoverableElements = document.querySelectorAll<HTMLElement>('.hoverable');
+    // note: this may affect performance if there's a lot of buttons
+    const hoverableElements = document.querySelectorAll<HTMLElement>('button');
     hoverableElements.forEach((element) => {
       element.addEventListener('mouseenter', handleMouseHover);
       element.addEventListener('mouseleave', handleMouseHoverOut);
